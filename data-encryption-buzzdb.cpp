@@ -19,6 +19,39 @@
 #include <regex>
 #include <stdexcept>
 
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
+
+std::string encrypt(const std::string &text, const std::string &key)
+{
+    int len;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    unsigned char iv[12];
+    RAND_bytes(iv, sizeof(iv));
+    EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, (unsigned char *)key.data(), iv);
+    std::vector<unsigned char> encrypt_text(text.size() + EVP_MAX_BLOCK_LENGTH);
+    EVP_EncryptUpdate(ctx, encrypt_text.data(), &len, (unsigned char *)text.data(), text.size());
+    EVP_EncryptFinal_ex(ctx, encrypt_text.data() + len, &len);
+    EVP_CIPHER_CTX_free(ctx);
+    return std::string((char *)iv, sizeof(iv)) + std::string((char *)encrypt_text.data(), len);
+}
+
+std::string decrypt(const std::string &encrypt_text, const std::string &key)
+{
+    int len;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    const unsigned char *iv = (unsigned char *)encrypt_text.data();
+    const unsigned char *encrypt_text_ = (unsigned char *)encrypt_text.data() + 12;
+    int ciphertext_len = encrypt_text.size() - 12;
+    EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, (unsigned char *)key.data(), iv);
+    std::vector<unsigned char> text(ciphertext_len + EVP_MAX_BLOCK_LENGTH);
+    EVP_DecryptUpdate(ctx, text.data(), &len, encrypt_text_, ciphertext_len);
+    EVP_DecryptFinal_ex(ctx, text.data() + len, &len);
+    EVP_CIPHER_CTX_free(ctx);
+    return std::string((char *)text.data(), len);
+}
+
 enum FieldType { INT, FLOAT, STRING };
 
 // Define a basic Field variant class that can hold different types
