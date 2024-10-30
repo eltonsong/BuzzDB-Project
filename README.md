@@ -1,3 +1,8 @@
+The purpose of this project is to add data encryption functionality to the BuzzDB architecture.
+See data-encrytion-buzzdb.cpp for Updated functions
+
+BuzzDB original code: https://github.com/jarulraj/buzzdb
+
 # buzzdb
 
 Compilation instructions:
