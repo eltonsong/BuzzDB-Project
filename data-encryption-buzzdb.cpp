@@ -23,6 +23,14 @@
 #include <openssl/rand.h>
 
 
+unsigned char key[32];
+
+void generate_key()
+{
+    RAND_bytes(key, sizeof(key));
+}
+
+
 std::string encrypt(const std::string &text, const std::string &key)
 {
     int len;
@@ -392,10 +400,12 @@ public:
     // Read a page from disk
     std::unique_ptr<SlottedPage> load(uint16_t page_id) {
         fileStream.seekg(page_id * PAGE_SIZE, std::ios::beg);
-        auto page = std::make_unique<SlottedPage>();
-        // Read the content of the file into the page
-        if(fileStream.read(page->page_data.get(), PAGE_SIZE)){
-            //std::cout << "Page read successfully from file." << std::endl;
+        std::string ciphertext(PAGE_SIZE, '\0');
+        std::string ciphertext(PAGE_SIZE, '\0');
+        if (fileStream.read(&ciphertext[0], PAGE_SIZE)) {
+            std::string plaintext = decrypt(ciphertext, key);
+            auto page = std::make_unique<SlottedPage>();
+            std::memcpy(page->page_data.get(), plaintext.data(), PAGE_SIZE);
         }
         else{
             std::cerr << "Error: Unable to read data from the file. \n";
@@ -407,10 +417,11 @@ public:
     // Write a page to disk
     void flush(uint16_t page_id, const std::unique_ptr<SlottedPage>& page) {
         size_t page_offset = page_id * PAGE_SIZE;        
-
+        std::string plaintext(page->page_data.get(), PAGE_SIZE);
+        std::string ciphertext = encrypt(plaintext, key);
         // Move the write pointer
         fileStream.seekp(page_offset, std::ios::beg);
-        fileStream.write(page->page_data.get(), PAGE_SIZE);        
+        fileStream.write(ciphertext.data(), ciphertext.size());
         fileStream.flush();
     }
 
@@ -1466,6 +1477,8 @@ public:
 int main() {
 
     BuzzDB db;
+
+    generate_key()
 
     std::ifstream inputFile("output.txt");
 
