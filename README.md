@@ -1,8 +1,10 @@
 The purpose of this project is to add data encryption functionality to the BuzzDB architecture.
 See data-encrytion-buzzdb.cpp for this program and output.txt for example showing
 
-Compilation instructions:
+To Compile, Type:
+$ make
 
-g++ -std=c++20 -O3 -Wall -Werror -Wextra data-encrytion-buzzdb.cpp -lssl -lcrypto
+To Run, Type:
+$ ./a.out
 
 BuzzDB original code: https://github.com/jarulraj/buzzdb
